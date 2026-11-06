@@ -1,0 +1,17 @@
+{
+  "target_url": "https://www.facebook.com",
+  "threads": 1,
+  "headless": false,
+  "enable_reaction": true,
+  "min_delay": 5,
+  "max_delay": 15,
+  "min_typing_delay": 60,
+  "max_typing_delay": 160,
+  "comments": [
+    "Sản phẩm còn hàng sẵn không shop ơi?",
+    "Cho mình xin bảng báo giá chi tiết nhé!",
+    "Chất lượng rất ổn áp, vote 5 sao cho shop",
+    "Giao hàng nhanh thật, hôm qua đặt nay đã nhận được rồi",
+    "Mẫu này có những màu nào thế bạn?"
+  ]
+}

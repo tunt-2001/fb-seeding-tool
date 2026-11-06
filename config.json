@@ -1,0 +1,27 @@
+{
+  "settings": {
+    "headless": false,
+    "gemini_api_key": "",
+    "default_delay_between_profiles_seconds": [15, 30],
+    "typing_delay_ms": [60, 180]
+  },
+  "profiles": [
+    {
+      "id": "profile_01",
+      "name": "Nick 1 - Khách hỏi giá",
+      "proxy": null
+    },
+    {
+      "id": "profile_02",
+      "name": "Nick 2 - Khách review khen",
+      "proxy": null
+    }
+  ],
+  "sample_comments": [
+    "Shop ơi cho mình hỏi mẫu này còn size L không ạ?",
+    "Màu này ở ngoài nhìn có bị sáng quá không shop ơi?",
+    "Hàng dùng ổn áp nha mn, mình mua đợt trước rồi",
+    "Giao hàng về Đà Nẵng thì tầm mấy ngày nhận được thế ạ?",
+    "Xin giá và bảng size nhé shop ơi!"
+  ]
+}
