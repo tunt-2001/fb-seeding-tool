@@ -24,9 +24,9 @@
         </div>
         <div>
           <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            FB SEEDING PRO <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">v2.0 Industrial</span>
+            FB SEEDING PRO <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">v3.0 Telegram Remote</span>
           </h1>
-          <p class="text-xs text-slate-400">Anti-detect • Auto 2FA • Xoay IP Dcom/Proxy • Seeding Lồng Nhau • Nuôi Nick</p>
+          <p class="text-xs text-slate-400">Anti-detect • Auto 2FA • Xoay IP • Seeding Lồng Nhau • Điều Khiển Telegram Từ Xa</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
@@ -76,18 +76,17 @@
         </div>
       </div>
 
-      <!-- Cột Giữa: Cấu hình Kịch bản & Chế độ (4 Cột) -->
+      <!-- Cột Giữa: Cấu hình Kịch bản & Telegram (4 Cột) -->
       <div class="lg:col-span-4 space-y-5">
         <div class="glass-card rounded-2xl p-5 shadow-xl space-y-4">
           <h2 class="text-base font-semibold flex items-center gap-2 text-indigo-400">
             <i class="fa-solid fa-sliders"></i> Cấu hình Kịch bản
           </h2>
 
-          <!-- Chọn Chế độ -->
           <div>
             <label class="block text-xs font-medium text-slate-300 mb-1">Chế độ hoạt động</label>
             <select id="campaign-mode" onchange="toggleModeUI()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
-              <option value="seeding">1. Seeding Bình Thường (Comment & Like)</option>
+              <option value="seeding">1. Seeding Thường (Comment & Like)</option>
               <option value="thread_reply">2. Seeding Lồng Nhau (Nick 1 hỏi, Nick 2 Reply)</option>
               <option value="farm">3. Nuôi Nick Tương Tác Dạo (Lướt Newsfeed, Reels)</option>
             </select>
@@ -101,6 +100,19 @@
           <div id="farm-group" class="hidden">
             <label class="block text-xs font-medium text-slate-300 mb-1">Thời gian nuôi mỗi nick (Phút)</label>
             <input type="number" id="farm-duration" value="3" min="1" max="15" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
+          </div>
+
+          <!-- Telegram Bot Remote Control -->
+          <div class="p-3 bg-sky-950/30 rounded-xl border border-sky-800/60 space-y-2">
+            <div class="text-xs font-semibold text-sky-400 flex items-center justify-between">
+              <span class="flex items-center gap-1.5"><i class="fa-brands fa-telegram text-base"></i> Điều Khiển Từ Xa (Telegram)</span>
+              <button onclick="testTelegram()" class="text-[10px] bg-sky-800/80 hover:bg-sky-700 px-2 py-0.5 rounded text-white transition">Test Gửi</button>
+            </div>
+            <div>
+              <input type="text" id="tele-token" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 mb-1.5" placeholder="Bot Token (từ @BotFather)">
+              <input type="text" id="tele-chatid" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200" placeholder="Your Chat ID (từ @userinfobot)">
+            </div>
+            <p class="text-[10px] text-slate-400">Gõ <code>/seed [link]</code>, <code>/farm</code>, <code>/status</code> trên Telegram để điều khiển.</p>
           </div>
 
           <!-- Hạ tầng mạng / Đổi IP -->
@@ -134,7 +146,7 @@
 
           <div id="comments-group">
             <label class="block text-xs font-medium text-slate-300 mb-1">Nội dung Bình luận (Mỗi dòng 1 câu)</label>
-            <textarea id="comments" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Mỗi câu bình luận trên một dòng..."></textarea>
+            <textarea id="comments" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Mỗi câu bình luận trên một dòng..."></textarea>
           </div>
 
           <button onclick="saveCampaign()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-2 rounded-lg font-medium shadow-md transition">
@@ -230,28 +242,47 @@
       if (data.farm_duration_minutes) document.getElementById('farm-duration').value = data.farm_duration_minutes;
       if (data.use_dcom_hilink !== undefined) document.getElementById('use-dcom').checked = data.use_dcom_hilink;
       if (data.rotate_proxy_api) document.getElementById('rotate-proxy-api').value = data.rotate_proxy_api;
+      if (data.telegram_bot_token) document.getElementById('tele-token').value = data.telegram_bot_token;
+      if (data.telegram_chat_id) document.getElementById('tele-chatid').value = data.telegram_chat_id;
       if (data.enable_reaction !== undefined) document.getElementById('enable-reaction').checked = data.enable_reaction;
       if (data.comments) document.getElementById('comments').value = data.comments.join('\n');
       toggleModeUI();
     }
 
-    async function saveCampaign() {
-      const payload = {
+    function getCampaignPayload() {
+      return {
         mode: document.getElementById('campaign-mode').value,
         target_url: document.getElementById('target-url').value.trim(),
         farm_duration_minutes: parseInt(document.getElementById('farm-duration').value) || 3,
         use_dcom_hilink: document.getElementById('use-dcom').checked,
         rotate_proxy_api: document.getElementById('rotate-proxy-api').value.trim(),
+        telegram_bot_token: document.getElementById('tele-token').value.trim(),
+        telegram_chat_id: document.getElementById('tele-chatid').value.trim(),
         threads: parseInt(document.getElementById('threads').value) || 1,
         enable_reaction: document.getElementById('enable-reaction').checked,
         comments: document.getElementById('comments').value.split('\n').map(c => c.trim()).filter(c => c)
       };
+    }
+
+    async function saveCampaign() {
+      const payload = getCampaignPayload();
       await fetch('/api/campaign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       alert("Đã lưu cấu hình chiến dịch thành công!");
+    }
+
+    async function testTelegram() {
+      const payload = getCampaignPayload();
+      const res = await fetch('/api/telegram/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      alert(data.message);
     }
 
     async function startCampaign() {
@@ -295,7 +326,7 @@
       loadAccounts();
       loadCampaign();
       setInterval(pollLogs, 1500);
-      setInterval(loadAccounts, 6000); // Tự động cập nhật bảng nick sau mỗi 6s
+      setInterval(loadAccounts, 6000);
     };
   </script>
 </body>

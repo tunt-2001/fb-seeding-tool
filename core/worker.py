@@ -1,3 +1,4 @@
+import os
 import time
 import random
 from concurrent.futures import ThreadPoolExecutor
@@ -7,30 +8,27 @@ from core.fb_auth import FacebookAuth
 from core.network_rotator import NetworkRotator
 
 class SeedingWorker:
-    def __init__(self, logger_callback=None, account_update_callback=None):
+    def __init__(self, logger_callback=None, account_update_callback=None, telegram_notifier=None):
         self.logger = logger_callback or print
         self.update_account_status = account_update_callback or (lambda uid, status: None)
+        self.telegram = telegram_notifier
         self.is_running = False
+        self.screenshot_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "screenshots")
+        os.makedirs(self.screenshot_dir, exist_ok=True)
 
     def log(self, message: str):
         self.logger(message)
 
     def farm_account(self, page, uid: str, duration_minutes: int = 3):
-        """
-        KỊCH BẢN NUÔI NICK (FARM MODE):
-        Lướt Newsfeed, xem video Reels, like dạo bạn bè để tăng trust cho tài khoản.
-        """
         self.log(f"[{uid}] [Farm Mode] Bắt đầu hoạt động lướt dạo tăng tương tác ({duration_minutes} phút)...")
         page.goto("https://www.facebook.com", timeout=45000)
         HumanBehavior.sleep_random(3, 5)
 
         end_time = time.time() + (duration_minutes * 60)
         while time.time() < end_time and self.is_running:
-            # Cuộn lướt xem bài
             HumanBehavior.natural_scroll(page, times=random.randint(2, 4))
             HumanBehavior.sleep_random(4, 8)
 
-            # Thỉnh thoảng like dạo 1 bài ngẫu nhiên trên Newsfeed
             if random.random() < 0.35:
                 try:
                     like_btns = page.locator("div[aria-label='Thích'], div[aria-label='Like']").all()
@@ -42,12 +40,10 @@ class SeedingWorker:
                 except Exception:
                     pass
 
-            # Thỉnh thoảng mở tab Video/Reels lướt xem
             if random.random() < 0.2:
                 try:
-                    self.log(f"[{uid}] [Farm Mode] Mở xem video Reels...")
                     page.goto("https://www.facebook.com/watch", timeout=30000)
-                    HumanBehavior.sleep_random(15, 25) # Xem video 15-25 giây
+                    HumanBehavior.sleep_random(15, 25)
                     page.goto("https://www.facebook.com", timeout=30000)
                 except Exception:
                     pass
@@ -55,14 +51,11 @@ class SeedingWorker:
         self.log(f"[{uid}] [Farm Mode] Hoàn tất phiên nuôi nick!")
 
     def process_single_account(self, account: dict, campaign: dict, thread_reply_target: str = None) -> tuple[bool, str]:
-        """
-        Thực hiện toàn bộ quy trình cho 1 tài khoản
-        """
         uid = account.get("uid", "")
         password = account.get("password", "")
         two_fa = account.get("two_fa", "")
         proxy_str = account.get("proxy", "")
-        mode = campaign.get("mode", "seeding") # "seeding", "farm", "thread_reply"
+        mode = campaign.get("mode", "seeding")
         profile_id = f"profile_{uid}" if uid else f"profile_{random.randint(1000, 9999)}"
 
         proxy_dict = None
@@ -99,6 +92,8 @@ class SeedingWorker:
                 self.update_account_status(uid, login_status)
                 if not success:
                     self.log(f"[{uid}] [!] Không thể đăng nhập. Trạng thái: {login_status}")
+                    if self.telegram and "Checkpoint" in login_status:
+                        self.telegram.send_message(f"⚠️ <b>CẢNH BÁO CHECKPOINT</b>\nNick: <code>{uid}</code>\nTrạng thái: <b>{login_status}</b>")
                     return False, ""
                 self.log(f"[{uid}] [✓] Đăng nhập thành công, đã lưu phiên!")
             else:
@@ -107,54 +102,51 @@ class SeedingWorker:
 
             # 2. XỬ LÝ THEO CHẾ ĐỘ
             if mode == "farm":
-                # Chế độ nuôi nick
                 farm_mins = int(campaign.get("farm_duration_minutes", 3))
                 self.farm_account(page, uid, duration_minutes=farm_mins)
+                if self.telegram:
+                    self.telegram.send_message(f"✅ Nick <code>{uid}</code> đã hoàn thành lượt nuôi tương tác ({farm_mins}p)!")
                 return True, ""
 
-            # CHẾ ĐỘ SEEDING HOẶC SEEDING LỒNG NHAU (THREAD REPLY)
+            # CHẾ ĐỘ SEEDING
             target_url = campaign.get("target_url")
             self.log(f"[{uid}] Truy cập bài viết: {target_url}")
             page.goto(target_url, timeout=60000)
             HumanBehavior.sleep_random(3.0, 5.0)
 
             # Cuộn trang warm-up
-            self.log(f"[{uid}] Cuộn trang xem nội dung bài viết...")
             HumanBehavior.natural_scroll(page, times=random.randint(2, 4))
 
-            # Thả Like nếu có bật
+            # Thả Like
             if campaign.get("enable_reaction", True):
                 try:
                     like_btn = page.locator("div[aria-label='Thích'], div[aria-label='Like']").first
                     if like_btn.is_visible(timeout=3000):
                         like_btn.click()
-                        self.log(f"[{uid}] [✓] Đã thả cảm xúc Thích bài viết.")
+                        self.log(f"[{uid}] [✓] Đã thả cảm xúc Thích.")
                         HumanBehavior.sleep_random(1.5, 3.0)
                 except Exception:
                     pass
 
             # Lấy nội dung comment
             comments_pool = campaign.get("comments", [])
-            comment_text = random.choice(comments_pool) if comments_pool else "Sản phẩm còn hàng sẵn không shop ơi?"
+            comment_text = random.choice(comments_pool) if comments_pool else "Sản phẩm tốt quá shop ơi!"
             posted_comment_text = comment_text
 
-            # Nếu là chế độ Thread Reply và có comment mục tiêu cần trả lời
             if mode == "thread_reply" and thread_reply_target:
-                self.log(f"[{uid}] [Thread Mode] Đang tìm comment mồi: \"{thread_reply_target[:30]}...\" để Reply")
+                self.log(f"[{uid}] [Thread Mode] Tìm comment mồi để Reply...")
                 try:
-                    # Tìm khối comment chứa nội dung của nick mồi
                     cmt_locator = page.locator(f"div[role='article']:has-text('{thread_reply_target[:20]}')").first
                     if cmt_locator.is_visible(timeout=5000):
                         reply_btn = cmt_locator.locator("div[role='button']:has-text('Trả lời'), div[role='button']:has-text('Reply')").first
                         if reply_btn.is_visible(timeout=3000):
                             reply_btn.click()
                             HumanBehavior.sleep_random(1.5, 2.5)
-                            self.log(f"[{uid}] [✓] Đã bấm nút Trả lời của comment mục tiêu!")
-                except Exception as e:
-                    self.log(f"[{uid}] Không tìm thấy comment mục tiêu để Reply, sẽ comment trực tiếp vào bài ({e})")
+                except Exception:
+                    pass
 
             # Gõ comment
-            self.log(f"[{uid}] Đang nhập bình luận: \"{comment_text}\"")
+            self.log(f"[{uid}] Gõ bình luận: \"{comment_text}\"")
             comment_box = page.locator("div[aria-label='Viết bình luận'], div[aria-label='Write a comment'], div[aria-label='Viết câu trả lời...'], div[role='textbox']").first
             
             if comment_box.is_visible(timeout=6000):
@@ -169,9 +161,17 @@ class SeedingWorker:
                 HumanBehavior.sleep_random(1.0, 2.0)
                 comment_box.press("Enter")
                 self.log(f"[{uid}] [✓] Đã gửi bình luận thành công!")
-                HumanBehavior.sleep_random(4.0, 7.0)
-            else:
-                self.log(f"[{uid}] [!] Không tìm thấy ô bình luận.")
+                HumanBehavior.sleep_random(4.0, 6.0)
+
+                # Chụp ảnh bằng chứng và gửi về Telegram
+                if self.telegram:
+                    try:
+                        screenshot_file = os.path.join(self.screenshot_dir, f"done_{uid}.png")
+                        page.screenshot(path=screenshot_file)
+                        caption = f"🎯 <b>SEEDING THÀNH CÔNG!</b>\n👤 Nick: <code>{uid}</code>\n💬 Comment: <i>\"{comment_text}\"</i>"
+                        self.telegram.send_photo(screenshot_file, caption=caption)
+                    except Exception as err:
+                        self.log(f"[-] Không thể gửi ảnh Telegram: {err}")
 
             return True, posted_comment_text
         except Exception as e:
@@ -182,27 +182,21 @@ class SeedingWorker:
             self.log(f"[{uid}] Đã đóng trình duyệt.")
 
     def run_campaign(self, accounts: list, campaign: dict):
-        """
-        Điều phối chạy chiến dịch có tích hợp Xoay IP và Chế độ Hội thoại Lồng nhau
-        """
         self.is_running = True
         mode = campaign.get("mode", "seeding")
         max_threads = int(campaign.get("threads", 1))
         rotate_api_url = campaign.get("rotate_proxy_api", "")
         use_dcom = campaign.get("use_dcom_hilink", False)
 
-        self.log(f"=== BẮT ĐẦU CHIẾN DỊCH (CHẾ ĐỘ: {mode.upper()} - {len(accounts)} NICK - {max_threads} LUỒNG) ===")
+        self.log(f"=== BẮT ĐẦU CHIẾN DỊCH (CHẾ ĐỘ: {mode.upper()} - {len(accounts)} NICK) ===")
 
         if mode == "thread_reply" and len(accounts) >= 2:
-            # KỊCH BẢN SEEDING LỒNG NHAU THEO CẶP (PAIR CONVERSATION)
-            self.log("[Thread Mode] Chạy theo cặp: Nick 1 hỏi mồi -> Nick 2 vào trả lời mồi...")
             for i in range(0, len(accounts), 2):
                 if not self.is_running:
                     break
                 acc1 = accounts[i]
                 acc2 = accounts[i+1] if i+1 < len(accounts) else None
 
-                # Nick 1 comment hỏi
                 self.log(f">> [Cặp {i//2 + 1}] Bắt đầu Nick mồi ({acc1.get('uid')})...")
                 ok1, cmt_text = self.process_single_account(acc1, campaign)
 
@@ -213,7 +207,7 @@ class SeedingWorker:
 
                 if ok1 and cmt_text and acc2:
                     wait_reply = random.randint(15, 30)
-                    self.log(f">> [Cặp {i//2 + 1}] Nghỉ {wait_reply}s rồi cho Nick 2 ({acc2.get('uid')}) vào Reply...")
+                    self.log(f">> [Cặp {i//2 + 1}] Chờ {wait_reply}s rồi cho Nick 2 Reply...")
                     time.sleep(wait_reply)
                     self.process_single_account(acc2, campaign, thread_reply_target=cmt_text)
 
@@ -223,14 +217,12 @@ class SeedingWorker:
                         NetworkRotator.rotate_via_api(rotate_api_url)
 
         else:
-            # CHẾ ĐỘ THƯỜNG HOẶC FARM
             with ThreadPoolExecutor(max_workers=max_threads) as executor:
                 futures = []
                 for acc in accounts:
                     if not self.is_running:
                         break
                     futures.append(executor.submit(self.process_single_account, acc, campaign))
-                    # Xoay IP giữa các nick nếu chạy đơn luồng
                     if max_threads == 1:
                         if use_dcom:
                             NetworkRotator.rotate_dcom_hilink()
@@ -245,3 +237,5 @@ class SeedingWorker:
 
         self.is_running = False
         self.log("=== HOÀN TẤT CHIẾN DỊCH! ===")
+        if self.telegram:
+            self.telegram.send_message("🏁 <b>CHIẾN DỊCH ĐÃ HOÀN TẤT 100%!</b>")

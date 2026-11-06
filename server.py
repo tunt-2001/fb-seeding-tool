@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from core.worker import SeedingWorker
+from core.telegram_bot import TelegramNotifier
 
 app = FastAPI(title="Facebook Seeding Manager Pro")
 
@@ -32,9 +33,6 @@ def update_account_status(uid: str, status: str):
             break
     write_json(ACCOUNTS_FILE, accounts)
 
-worker = SeedingWorker(logger_callback=add_log, account_update_callback=update_account_status)
-is_running_campaign = False
-
 def read_json(path, default):
     if not os.path.exists(path):
         return default
@@ -47,6 +45,70 @@ def read_json(path, default):
 def write_json(path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+telegram_notifier = TelegramNotifier()
+worker = SeedingWorker(logger_callback=add_log, account_update_callback=update_account_status, telegram_notifier=telegram_notifier)
+is_running_campaign = False
+
+def handle_telegram_command(cmd: str, args: list):
+    global is_running_campaign
+    if cmd == "/status":
+        accounts = read_json(ACCOUNTS_FILE, [])
+        live = len([a for a in accounts if a.get("status") == "Live"])
+        cp = len([a for a in accounts if "Checkpoint" in a.get("status", "")])
+        state = "Đang chạy chiến dịch 🔥" if is_running_campaign else "Đang rảnh rỗi 🟢"
+        msg = (
+            f"📊 <b>TRẠNG THÁI HỆ THỐNG</b>\n"
+            f"• Trạng thái máy: {state}\n"
+            f"• Tổng số Nick: {len(accounts)}\n"
+            f"• Nick Live: {live}\n"
+            f"• Nick Checkpoint: {cp}"
+        )
+        telegram_notifier.send_message(msg)
+
+    elif cmd == "/stop":
+        worker.is_running = False
+        is_running_campaign = False
+        telegram_notifier.send_message("🛑 <b>ĐÃ DỪNG TOÀN BỘ CHIẾN DỊCH!</b>")
+
+    elif cmd == "/farm":
+        if is_running_campaign:
+            telegram_notifier.send_message("⚠️ Hệ thống đang có chiến dịch đang chạy!")
+            return
+        campaign = read_json(CAMPAIGN_FILE, {})
+        campaign["mode"] = "farm"
+        write_json(CAMPAIGN_FILE, campaign)
+        threading.Thread(target=background_run, daemon=True).start()
+        telegram_notifier.send_message("🌾 <b>Đã nhận lệnh: BẮT ĐẦU NUÔI DÀN NICK (FARM MODE)!</b>")
+
+    elif cmd == "/seed":
+        if is_running_campaign:
+            telegram_notifier.send_message("⚠️ Hệ thống đang có chiến dịch đang chạy!")
+            return
+        if not args:
+            telegram_notifier.send_message("❌ Thiếu link bài viết! Cú pháp: <code>/seed https://facebook.com/...</code>")
+            return
+        url = args[0]
+        campaign = read_json(CAMPAIGN_FILE, {})
+        campaign["mode"] = "seeding"
+        campaign["target_url"] = url
+        write_json(CAMPAIGN_FILE, campaign)
+        threading.Thread(target=background_run, daemon=True).start()
+        telegram_notifier.send_message(f"🚀 <b>Đã nhận lệnh: BẮT ĐẦU SEEDING BÀI VIẾT!</b>\nLink: {url}")
+
+def init_telegram():
+    campaign = read_json(CAMPAIGN_FILE, {})
+    token = campaign.get("telegram_bot_token", "")
+    chat_id = campaign.get("telegram_chat_id", "")
+    if token and chat_id:
+        telegram_notifier.bot_token = token
+        telegram_notifier.chat_id = chat_id
+        telegram_notifier.command_dispatcher = handle_telegram_command
+        telegram_notifier.start_polling()
+
+@app.on_event("startup")
+def startup_event():
+    init_telegram()
 
 @app.get("/api/accounts")
 def get_accounts():
@@ -108,8 +170,8 @@ def get_campaign():
         "farm_duration_minutes": 3,
         "use_dcom_hilink": false,
         "rotate_proxy_api": "",
-        "min_delay": 5,
-        "max_delay": 15,
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
         "comments": [
             "Mẫu này còn hàng không shop ơi?",
             "Tư vấn cho mình với nhé shop!",
@@ -121,8 +183,23 @@ def get_campaign():
 @app.post("/api/campaign")
 def save_campaign(campaign: dict):
     write_json(CAMPAIGN_FILE, campaign)
-    add_log("Đã cập nhật cài đặt chiến dịch mới.")
+    init_telegram()
+    add_log("Đã cập nhật cài đặt chiến dịch & cấu hình Telegram Bot.")
     return {"status": "success"}
+
+@app.post("/api/telegram/test")
+def test_telegram(campaign: dict):
+    token = campaign.get("telegram_bot_token", "").strip()
+    chat_id = campaign.get("telegram_chat_id", "").strip()
+    if not token or not chat_id:
+        return JSONResponse({"status": "error", "message": "Vui lòng nhập Bot Token và Chat ID!"}, status_code=400)
+    
+    test_notifier = TelegramNotifier(bot_token=token, chat_id=chat_id)
+    try:
+        test_notifier.send_message("🎉 <b>KẾT NỐI TELEGRAM BOT THÀNH CÔNG!</b>\nBạn đã có thể điều khiển tool seeding từ xa qua điện thoại!")
+        return {"status": "success", "message": "Đã gửi tin nhắn test thành công tới Telegram!"}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"Không thể gửi: {e}"}, status_code=500)
 
 def background_run():
     global is_running_campaign
@@ -130,10 +207,11 @@ def background_run():
     accounts = read_json(ACCOUNTS_FILE, [])
     campaign = read_json(CAMPAIGN_FILE, {})
     try:
-        # Lọc bỏ các nick dính Checkpoint nếu muốn an toàn
         active_accounts = [a for a in accounts if not a.get("status", "").startswith("Checkpoint")]
         if not active_accounts:
-            add_log("[!] Cảnh báo: Toàn bộ nick trong danh sách đang bị Checkpoint hoặc chưa sẵn sàng!")
+            add_log("[!] Cảnh báo: Không có nick nào khả dụng!")
+            if telegram_notifier.chat_id:
+                telegram_notifier.send_message("⚠️ <b>Không thể chạy:</b> Toàn bộ nick trong danh sách đang bị Checkpoint!")
             return
         worker.run_campaign(active_accounts, campaign)
     finally:
@@ -147,7 +225,7 @@ def start_campaign(background_tasks: BackgroundTasks):
     
     accounts = read_json(ACCOUNTS_FILE, [])
     if not accounts:
-        return JSONResponse({"status": "error", "message": "Chưa có tài khoản nào trong hệ thống!"}, status_code=400)
+        return JSONResponse({"status": "error", "message": "Chưa có tài khoản nào!"}, status_code=400)
 
     threading.Thread(target=background_run, daemon=True).start()
     return {"status": "success", "message": "Chiến dịch đã được khởi chạy!"}
