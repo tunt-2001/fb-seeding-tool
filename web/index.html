@@ -3,122 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Facebook Seeding Control Panel</title>
+  <title>Facebook Seeding Pro Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background-color: #0f172a; color: #f8fafc; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    pre::-webkit-scrollbar { width: 6px; height: 6px; }
+    body { background-color: #0b0f19; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .glass-card { background: rgba(23, 31, 48, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.07); }
+    pre::-webkit-scrollbar { width: 6px; }
     pre::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   </style>
 </head>
-<body class="min-h-screen p-6">
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <header class="flex items-center justify-between pb-6 mb-6 border-b border-slate-800">
+<body class="min-h-screen p-4 md:p-6">
+  <div class="max-w-[1450px] mx-auto">
+    
+    <!-- Top Header -->
+    <header class="flex flex-wrap items-center justify-between gap-4 pb-5 mb-5 border-b border-slate-800">
       <div class="flex items-center space-x-3">
-        <div class="bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-500/20">
+        <div class="bg-blue-600 text-white p-3 rounded-xl shadow-lg shadow-blue-600/30">
           <i class="fa-brands fa-facebook text-2xl"></i>
         </div>
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">HỆ THỐNG SEEDING FACEBOOK (PRO)</h1>
-          <p class="text-sm text-slate-400">Anti-detect Browser • Auto 2FA • Multi-thread Runner</p>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            FB SEEDING PRO <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">v2.0 Industrial</span>
+          </h1>
+          <p class="text-xs text-slate-400">Anti-detect • Auto 2FA • Xoay IP Dcom/Proxy • Seeding Lồng Nhau • Nuôi Nick</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
         <span id="status-badge" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sẵn sàng
         </span>
-        <button id="btn-start" onclick="startCampaign()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium shadow-lg shadow-blue-600/30 flex items-center gap-2 transition">
-          <i class="fa-solid fa-play"></i> BẮT ĐẦU CHẠY
+        <button id="btn-start" onclick="startCampaign()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition">
+          <i class="fa-solid fa-play"></i> BẮT ĐẦU
+        </button>
+        <button id="btn-stop" onclick="stopCampaign()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition hidden">
+          <i class="fa-solid fa-stop"></i> DỪNG
         </button>
       </div>
     </header>
 
-    <!-- Main Grid Layout -->
+    <!-- Main Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
-      <!-- Cột Trái: Quản lý Tài khoản & Kịch bản (7 Cột) -->
-      <div class="lg:col-span-7 space-y-6">
-        
-        <!-- Khối 1: Nhập danh sách Via -->
+      <!-- Cột Trái: Quản lý Tài khoản (4 Cột) -->
+      <div class="lg:col-span-4 space-y-5">
         <div class="glass-card rounded-2xl p-5 shadow-xl">
           <div class="flex justify-between items-center mb-3">
-            <h2 class="text-lg font-semibold flex items-center gap-2 text-blue-400">
-              <i class="fa-solid fa-users"></i> Danh sách Tài khoản (Via / Clone)
+            <h2 class="text-base font-semibold flex items-center gap-2 text-blue-400">
+              <i class="fa-solid fa-users"></i> Quản Lý Dàn Nick
             </h2>
-            <div class="space-x-2">
-              <span id="acc-count" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-300">0 Tài khoản</span>
-              <button onclick="clearAccounts()" class="text-xs text-rose-400 hover:text-rose-300 transition">Xóa hết</button>
+            <div class="flex items-center space-x-2">
+              <span id="acc-count" class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300 font-mono">0 Nick</span>
+              <button onclick="clearAccounts()" class="text-xs text-rose-400 hover:text-rose-300">Xóa</button>
             </div>
           </div>
-          <p class="text-xs text-slate-400 mb-2">Định dạng chuẩn: <code>UID|Pass|2FA|Cookie|Proxy</code> (Mỗi tài khoản 1 dòng)</p>
-          <textarea id="raw-via" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500 transition" placeholder="100089283748291|Pass123|JBSWY3DPEHPK3PXP||127.0.0.1:8080"></textarea>
-          <div class="mt-3 flex justify-end">
-            <button onclick="importAccounts()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2 rounded-lg font-medium border border-slate-700 transition">
-              <i class="fa-solid fa-file-import mr-1"></i> Nạp danh sách Nick
-            </button>
+          
+          <p class="text-[11px] text-slate-400 mb-2">Định dạng: <code>UID|Pass|2FA|Cookie|Proxy</code></p>
+          <textarea id="raw-via" rows="3" class="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500 transition" placeholder="100089283748291|Pass123|JBSWY3DPEHPK3PXP||127.0.0.1:8080"></textarea>
+          
+          <button onclick="importAccounts()" class="w-full mt-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs py-2 rounded-lg font-medium border border-slate-700 transition">
+            <i class="fa-solid fa-file-import mr-1"></i> Nạp thêm tài khoản
+          </button>
+
+          <!-- Danh sách Nick Table -->
+          <div class="mt-4 border-t border-slate-800/80 pt-3">
+            <div class="text-xs font-medium text-slate-400 mb-2 flex justify-between">
+              <span>Danh sách đã nạp</span>
+              <button onclick="loadAccounts()" class="text-blue-400 hover:underline"><i class="fa-solid fa-rotate-right"></i> Làm mới</button>
+            </div>
+            <div id="accounts-table" class="space-y-1.5 max-h-[380px] overflow-y-auto pr-1"></div>
           </div>
         </div>
+      </div>
 
-        <!-- Khối 2: Cấu hình Kịch bản Seeding -->
+      <!-- Cột Giữa: Cấu hình Kịch bản & Chế độ (4 Cột) -->
+      <div class="lg:col-span-4 space-y-5">
         <div class="glass-card rounded-2xl p-5 shadow-xl space-y-4">
-          <h2 class="text-lg font-semibold flex items-center gap-2 text-indigo-400">
-            <i class="fa-solid fa-sliders"></i> Cấu hình Kịch bản & Chiến dịch
+          <h2 class="text-base font-semibold flex items-center gap-2 text-indigo-400">
+            <i class="fa-solid fa-sliders"></i> Cấu hình Kịch bản
           </h2>
 
+          <!-- Chọn Chế độ -->
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Link bài viết Facebook (Fanpage / Group)</label>
-            <input type="text" id="target-url" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="https://www.facebook.com/.../posts/...">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Chế độ hoạt động</label>
+            <select id="campaign-mode" onchange="toggleModeUI()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+              <option value="seeding">1. Seeding Bình Thường (Comment & Like)</option>
+              <option value="thread_reply">2. Seeding Lồng Nhau (Nick 1 hỏi, Nick 2 Reply)</option>
+              <option value="farm">3. Nuôi Nick Tương Tác Dạo (Lướt Newsfeed, Reels)</option>
+            </select>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div id="target-url-group">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Link bài viết Facebook</label>
+            <input type="text" id="target-url" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="https://www.facebook.com/.../posts/...">
+          </div>
+
+          <div id="farm-group" class="hidden">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Thời gian nuôi mỗi nick (Phút)</label>
+            <input type="number" id="farm-duration" value="3" min="1" max="15" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
+          </div>
+
+          <!-- Hạ tầng mạng / Đổi IP -->
+          <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+            <div class="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-network-wired"></i> Cấu hình Xoay IP
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer text-xs">
+              <input type="checkbox" id="use-dcom" class="sr-only peer">
+              <div class="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+              <span class="ml-2 text-slate-300 text-[11px]">Đổi IP Dcom 4G (HiLink 192.168.8.1)</span>
+            </label>
+            <div>
+              <input type="text" id="rotate-proxy-api" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200" placeholder="Link API xoay Proxy (TMProxy, Tinsoft...)">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-medium text-slate-300 mb-1">Số luồng (Threads)</label>
-              <input type="number" id="threads" min="1" max="10" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100">
+              <input type="number" id="threads" min="1" max="5" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Nghỉ giữa nick (Giây)</label>
-              <div class="flex items-center space-x-1">
-                <input type="number" id="min-delay" value="5" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-100">
-                <span class="text-slate-500">-</span>
-                <input type="number" id="max-delay" value="15" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-100">
-              </div>
-            </div>
-            <div class="flex items-center pt-5">
+            <div class="flex items-center pt-4">
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="enable-reaction" checked class="sr-only peer">
-                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                <span class="ml-2 text-xs font-medium text-slate-300">Tự động Thích</span>
+                <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 peer-checked:bg-blue-600"></div>
+                <span class="ml-2 text-xs text-slate-300">Tự động Thích</span>
               </label>
             </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Danh sách Comment (Mỗi dòng 1 câu ngẫu nhiên)</label>
-            <textarea id="comments" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Mỗi câu bình luận trên một dòng..."></textarea>
+          <div id="comments-group">
+            <label class="block text-xs font-medium text-slate-300 mb-1">Nội dung Bình luận (Mỗi dòng 1 câu)</label>
+            <textarea id="comments" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" placeholder="Mỗi câu bình luận trên một dòng..."></textarea>
           </div>
 
-          <div class="flex justify-end">
-            <button onclick="saveCampaign()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-md transition">
-              <i class="fa-solid fa-floppy-disk mr-1"></i> Lưu Cấu Hình
-            </button>
-          </div>
+          <button onclick="saveCampaign()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-2 rounded-lg font-medium shadow-md transition">
+            <i class="fa-solid fa-floppy-disk mr-1"></i> Lưu Cấu Hình Chiến Dịch
+          </button>
         </div>
-
       </div>
 
-      <!-- Cột Phải: Bảng điều khiển Thời gian thực (Live Logs & Status) (5 Cột) -->
-      <div class="lg:col-span-5 space-y-6">
+      <!-- Cột Phải: Nhật ký Thời gian thực (4 Cột) -->
+      <div class="lg:col-span-4 space-y-5">
         <div class="glass-card rounded-2xl p-5 shadow-xl flex flex-col h-[650px]">
           <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
-            <h2 class="text-lg font-semibold flex items-center gap-2 text-emerald-400">
-              <i class="fa-solid fa-terminal"></i> Nhật ký Luồng (Live Logs)
+            <h2 class="text-base font-semibold flex items-center gap-2 text-emerald-400">
+              <i class="fa-solid fa-terminal"></i> Nhật Ký Hoạt Động (Live Logs)
             </h2>
-            <button onclick="document.getElementById('log-box').innerText=''" class="text-xs text-slate-500 hover:text-slate-400">Clear</button>
+            <button onclick="document.getElementById('log-box').innerText=''" class="text-xs text-slate-500 hover:text-slate-400">Xóa log</button>
           </div>
-          <pre id="log-box" class="flex-1 bg-slate-950/80 rounded-xl p-4 font-mono text-xs text-emerald-400 overflow-y-auto leading-relaxed whitespace-pre-wrap select-all border border-slate-800/80"></pre>
+          <pre id="log-box" class="flex-1 bg-slate-950/90 rounded-xl p-3.5 font-mono text-[11px] text-emerald-400 overflow-y-auto leading-relaxed whitespace-pre-wrap select-all border border-slate-800/80"></pre>
         </div>
       </div>
 
@@ -126,10 +160,45 @@
   </div>
 
   <script>
+    function toggleModeUI() {
+      const mode = document.getElementById('campaign-mode').value;
+      const urlGroup = document.getElementById('target-url-group');
+      const commentsGroup = document.getElementById('comments-group');
+      const farmGroup = document.getElementById('farm-group');
+
+      if (mode === 'farm') {
+        urlGroup.classList.add('hidden');
+        commentsGroup.classList.add('hidden');
+        farmGroup.classList.remove('hidden');
+      } else {
+        urlGroup.classList.remove('hidden');
+        commentsGroup.classList.remove('hidden');
+        farmGroup.classList.add('hidden');
+      }
+    }
+
+    function renderStatusBadge(status) {
+      if (status === 'Live') return `<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Live</span>`;
+      if (status.includes('Checkpoint')) return `<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/30">${status}</span>`;
+      if (status === 'Wrong Password') return `<span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30">Sai Pass</span>`;
+      return `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300">Ready</span>`;
+    }
+
     async function loadAccounts() {
       const res = await fetch('/api/accounts');
       const data = await res.json();
-      document.getElementById('acc-count').innerText = `${data.length} Tài khoản`;
+      document.getElementById('acc-count').innerText = `${data.length} Nick`;
+      
+      const container = document.getElementById('accounts-table');
+      container.innerHTML = data.map(acc => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800 text-xs">
+          <div class="truncate mr-2">
+            <span class="font-mono text-slate-200 font-semibold">${acc.uid}</span>
+            <span class="text-[10px] text-slate-500 block truncate">${acc.proxy || 'No Proxy'}</span>
+          </div>
+          <div>${renderStatusBadge(acc.status || 'Ready')}</div>
+        </div>
+      `).join('');
     }
 
     async function importAccounts() {
@@ -147,7 +216,7 @@
     }
 
     async function clearAccounts() {
-      if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ danh sách nick?")) return;
+      if (!confirm("Xóa toàn bộ nick khỏi hệ thống?")) return;
       await fetch('/api/accounts/clear', { method: 'DELETE' });
       loadAccounts();
     }
@@ -155,20 +224,25 @@
     async function loadCampaign() {
       const res = await fetch('/api/campaign');
       const data = await res.json();
+      if (data.mode) document.getElementById('campaign-mode').value = data.mode;
       if (data.target_url) document.getElementById('target-url').value = data.target_url;
       if (data.threads) document.getElementById('threads').value = data.threads;
-      if (data.min_delay) document.getElementById('min-delay').value = data.min_delay;
-      if (data.max_delay) document.getElementById('max-delay').value = data.max_delay;
+      if (data.farm_duration_minutes) document.getElementById('farm-duration').value = data.farm_duration_minutes;
+      if (data.use_dcom_hilink !== undefined) document.getElementById('use-dcom').checked = data.use_dcom_hilink;
+      if (data.rotate_proxy_api) document.getElementById('rotate-proxy-api').value = data.rotate_proxy_api;
       if (data.enable_reaction !== undefined) document.getElementById('enable-reaction').checked = data.enable_reaction;
       if (data.comments) document.getElementById('comments').value = data.comments.join('\n');
+      toggleModeUI();
     }
 
     async function saveCampaign() {
       const payload = {
+        mode: document.getElementById('campaign-mode').value,
         target_url: document.getElementById('target-url').value.trim(),
-        threads: parseInt(document.getElementById('threads').value),
-        min_delay: parseInt(document.getElementById('min-delay').value),
-        max_delay: parseInt(document.getElementById('max-delay').value),
+        farm_duration_minutes: parseInt(document.getElementById('farm-duration').value) || 3,
+        use_dcom_hilink: document.getElementById('use-dcom').checked,
+        rotate_proxy_api: document.getElementById('rotate-proxy-api').value.trim(),
+        threads: parseInt(document.getElementById('threads').value) || 1,
         enable_reaction: document.getElementById('enable-reaction').checked,
         comments: document.getElementById('comments').value.split('\n').map(c => c.trim()).filter(c => c)
       };
@@ -177,26 +251,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      alert("Đã lưu kịch bản chiến dịch thành công!");
+      alert("Đã lưu cấu hình chiến dịch thành công!");
     }
 
     async function startCampaign() {
-      const btn = document.getElementById('btn-start');
-      btn.disabled = true;
-      btn.innerText = "Đang chạy...";
-      try {
-        const res = await fetch('/api/campaign/start', { method: 'POST' });
-        const data = await res.json();
-        if (res.status !== 200) {
-          alert(data.message);
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-play"></i> BẮT ĐẦU CHẠY';
-        }
-      } catch (e) {
-        alert("Lỗi khi gửi lệnh bắt đầu: " + e);
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-play"></i> BẮT ĐẦU CHẠY';
-      }
+      await saveCampaign();
+      const res = await fetch('/api/campaign/start', { method: 'POST' });
+      const data = await res.json();
+      if (res.status !== 200) alert(data.message);
+    }
+
+    async function stopCampaign() {
+      await fetch('/api/campaign/stop', { method: 'POST' });
     }
 
     async function pollLogs() {
@@ -208,17 +274,19 @@
         box.scrollTop = box.scrollHeight;
 
         const badge = document.getElementById('status-badge');
-        const btn = document.getElementById('btn-start');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+
         if (data.is_running) {
           badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-2";
-          badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Đang chạy...';
-          btn.disabled = true;
-          btn.innerText = "ĐANG CHẠY...";
+          badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Đang hoạt động...';
+          btnStart.classList.add('hidden');
+          btnStop.classList.remove('hidden');
         } else {
           badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2";
           badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sẵn sàng';
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-play"></i> BẮT ĐẦU CHẠY';
+          btnStart.classList.remove('hidden');
+          btnStop.classList.add('hidden');
         }
       } catch (e) {}
     }
@@ -227,6 +295,7 @@
       loadAccounts();
       loadCampaign();
       setInterval(pollLogs, 1500);
+      setInterval(loadAccounts, 6000); // Tự động cập nhật bảng nick sau mỗi 6s
     };
   </script>
 </body>

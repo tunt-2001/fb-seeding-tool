@@ -1,51 +1,37 @@
-# HỆ THỐNG SEEDING FACEBOOK NỘI BỘ (ANTI-DETECT & AI)
+# FB SEEDING PRO (v2.0 Industrial)
 
-Tool tự động tương tác, thả Like và Bình luận tự nhiên trên các bài viết Fanpage và Group Facebook, mô phỏng hành vi người thật và lưu session riêng biệt cho từng Profile.
-
----
-
-## 1. Cấu trúc thư mục
-
-* `main.py`: File chạy chính.
-* `run.bat`: Bấm đúp chuột để chạy ngay trên Windows.
-* `config.json`: Cấu hình danh sách nick, tốc độ gõ phím, comment mẫu và Gemini API Key.
-* `profiles/`: Thư mục tự động tạo, lưu trữ Cookie, LocalStorage và phiên đăng nhập của từng con Nick (không lo bị văng đăng xuất).
-* `core/browser_manager.py`: Quản lý trình duyệt Chromium chuẩn Anti-detect (Stealth).
-* `core/human_behavior.py`: Giả lập hành vi người thật (Human Typing, cuộn chuột, xem bài).
-* `core/ai_generator.py`: Tích hợp Gemini 2.5 Flash để tự động tạo comment tự nhiên theo nội dung bài viết.
+Hệ thống Seeding & Nuôi Nick Facebook tự động hóa toàn diện, chuyên dụng cho doanh nghiệp/team bán hàng nội bộ.
 
 ---
 
-## 2. Hướng dẫn sử dụng
+## 🚀 Các Tính Năng Nổi Bật (v2.0)
 
-### Bước 1: Đăng nhập nick lần đầu (Chỉ làm 1 lần cho mỗi nick)
-1. Bấm đúp vào file `run.bat` (hoặc mở Terminal gõ `python main.py`).
-2. Chọn **Chức năng 1**: `Đăng nhập / Khởi tạo Profile Nick mới`.
-3. Nhập ID cho Profile, ví dụ: `profile_01`.
-4. Trình duyệt Chromium sẽ tự động bật lên trang Facebook.
-5. Bạn tiến hành đăng nhập tài khoản Facebook (nhập mật khẩu, mã 2FA).
-6. Sau khi đăng nhập thành công và đã thấy Newsfeed, quay lại cửa sổ dòng lệnh và bấm **ENTER**.
-7. *Từ các lần sau, Nick này đã được lưu vĩnh viễn trong `profiles/profile_01`, mở lên là tự động đã đăng nhập sẵn.*
+1. **Anti-detect Browser & Persistent Profiles:**
+   * Mỗi nick sở hữu một thư mục Profile riêng biệt (`profiles/profile_{UID}`), lưu Cookie/Session vĩnh viễn, không lo bị đăng xuất.
+   * Che giấu cờ `navigator.webdriver` và giả mạo vân tay trình duyệt.
 
-### Bước 2: Cấu hình danh sách Nick chạy seeding
-Mở file `config.json` để thêm hoặc sửa danh sách nick bạn muốn chạy trong mục `"profiles"`:
-```json
-"profiles": [
-  { "id": "profile_01", "name": "Nick 1 - Khách hỏi giá", "proxy": null },
-  { "id": "profile_02", "name": "Nick 2 - Khách review", "proxy": null }
-]
-```
-*(Nếu dùng Proxy, bạn chỉ cần điền vào mục `"proxy"`: `{"server": "http://ip:port", "username": "...", "password": "..."}`).*
+2. **Auto 2FA Login:**
+   * Tự động giải mã OTP từ mã bí mật 2FA (`TOTP`) và điền form đăng nhập Facebook mà không cần thao tác tay.
 
-### Bước 3: Chạy chiến dịch Seeding
-1. Mở `run.bat`, chọn **Chức năng 2**: `Chạy Seeding bài viết`.
-2. Dán link bài viết Facebook (Fanpage hoặc Group).
-3. Nhập 1 câu mô tả ngắn về sản phẩm bài viết (hoặc nhấn Enter để dùng comment mẫu).
-4. Tool sẽ tuần tự mở từng Profile $\rightarrow$ Lướt đọc bài (Warm-up) $\rightarrow$ Thả Like $\rightarrow$ Gõ comment tự nhiên $\rightarrow$ Nghỉ một chút rồi đóng lại.
+3. **Cơ Chế Xoay IP Đa Dạng (Chống Trảm Cụm Nick):**
+   * Hỗ trợ đổi IP qua **Dcom 4G (Huawei HiLink 192.168.8.1)**.
+   * Hỗ trợ đổi IP qua **Link API của các dịch vụ Proxy Xoay** (TMProxy, Tinsoft, ProxyFb...).
+   * Hỗ trợ gắn Proxy tĩnh cố định cho từng tài khoản.
+
+4. **3 Chế Độ Hoạt Động Chuyên Sâu:**
+   * **Chế độ 1: Seeding Thường:** Cuộn trang, thả cảm xúc Like, gõ comment người thật.
+   * **Chế độ 2: Seeding Lồng Nhau (Thread Reply):** Chạy theo từng cặp tài khoản: Nick 1 hỏi mồi $\rightarrow$ Nick 2 tự động tìm đúng comment của Nick 1 để bấm Trả Lời (Reply).
+   * **Chế độ 3: Nuôi Nick (Farm Mode):** Tự động lướt Newsfeed 2–5 phút, xem video Reels/Watch, like dạo bài viết bạn bè để tăng độ Trust cho nick mới mua.
+
+5. **Giám Sát Sức Khỏe & Nhận Diện Checkpoint:**
+   * Tự động phát hiện các dạng Checkpoint phổ biến: `Checkpoint 282` (quét mặt), `Checkpoint 956` (két sắt), `Sai Pass`.
+   * Hiển thị Badge trạng thái trực quan trên Dashboard và tự động bỏ qua nick lỗi để không làm nghẽn chiến dịch.
 
 ---
 
-## 3. Lưu ý an toàn từ CTO:
-* Không nên tăng tốc độ gõ phím quá nhanh (giữ mặc định `60ms - 180ms` mỗi ký tự).
-* Giữa 2 nick nên có thời gian nghỉ từ `30s - 120s`.
-* Mỗi nick không nên comment quá 3 - 5 bài/ngày để giữ độ trust cho tài khoản.
+## 🛠️ Hướng Dẫn Sử Dụng
+
+1. Bấm đúp chuột vào file **`run.bat`**.
+2. Trình duyệt sẽ tự động mở trang điều khiển tại: `http://127.0.0.1:8000`.
+3. Dán danh sách Via theo định dạng: `UID|Pass|2FA|Cookie|Proxy` vào ô và bấm **Nạp thêm tài khoản**.
+4. Chọn chế độ mong muốn (Seeding, Thread Reply, hoặc Nuôi Nick) $\rightarrow$ Bấm **BẮT ĐẦU**.
